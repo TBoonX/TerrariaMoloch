@@ -217,6 +217,8 @@ object MolochMode extends App {
     if (existingMoloch && ( newMoloch != _moloch )) {
       pimpTheMoloch(newMoloch)
       
+      setAllNotMolochTeam
+
       setTeam(newMoloch, MOLOCH_TEAM)
       
       message("Der neue Moloch ist " + newMoloch.playername + "!")

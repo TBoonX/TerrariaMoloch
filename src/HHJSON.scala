@@ -28,7 +28,7 @@ object JSON {
   implicit def ScalaJSONToDouble(s: ScalaJSON) = s.toDouble
 }
 
-case class JSONException extends Exception
+case class JSONException() extends Exception
 
 class ScalaJSONIterator(i: java.util.Iterator[java.lang.Object]) extends Iterator[ScalaJSON] {
   def hasNext = i.hasNext()

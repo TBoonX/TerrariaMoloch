@@ -145,10 +145,19 @@ object MolochMode extends App {
   }
   
   def running() = {
-    while (true) {
+    var run = true
+    
+    while (run) {
+      println("update the moloch")
       updateMoloch()
       
+      println("update PVP")
+      updatePVP()
       
+      println("update Kills")
+      updateKillsForAll()
+      
+      run = false
     }
   }
   
@@ -205,7 +214,8 @@ object MolochMode extends App {
     
     getTime()
     
-    if (!oldDaytime && _daytime) {
+    //if (!oldDaytime && _daytime)
+    {
       _isPVP = !_isPVP
       
       togglePVP()
@@ -243,6 +253,31 @@ object MolochMode extends App {
     //TODO
   }
   
+  def getKills(player: Player) = {
+    val path = "/v2/server/rawcmd"
+    val get = "cmd=%2Fcheck%20kills%20" + player.loginname
+
+    val ret = callRestAPI(path, get)
+
+    val body = ret.body()
+    
+    var html = body.html().replaceAll("&quot;", "\"")
+
+    //println(html)
+
+    val json = parseJSON(html)
+
+    val response = json.apply("response")
+    
+    println(player.playername + ": " + response.toString)
+  }
+  
+  def updateKillsForAll() = {
+    _playerlist.foreach((player: Player) => {
+      getKills(player)
+    })
+  }
+  
   def message(msg: String) = {
     val path = "/v2/server/broadcast"
     val get = "msg=" + (msg.replace(" ", "%20").replace("!", "%21").replace(",", "%2C").replace(":", "%3A"))
@@ -266,14 +301,17 @@ object MolochMode extends App {
     var position: String = ""
     var inventory: String = ""
     var buffs: String = ""
+    var kills: String = ""
     
-      def setRead(p: String, i: String, b: String) = {
+    def setRead(p: String, i: String, b: String) = {
       	this.position = p
       	this.inventory = i
       	this.buffs = b
     }
     
-    
+    def setKills(k: String) = {
+      this.kills = k
+    }
   }
 
   main()

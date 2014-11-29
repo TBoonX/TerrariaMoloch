@@ -163,6 +163,8 @@ object MolochMode extends App {
       println("update Kills")
       updateKillsForAll()
       
+      printHighscore()
+      
       run = false
     }
   }
@@ -197,20 +199,42 @@ object MolochMode extends App {
 
     //if there is no moloch more print message to players
     if (!existingMoloch) {
+      //make them faster
+      _playerlist.foreach((player: Player) => {
+    	  setBuff(player, 3, 30)
+	  })
+	  
+      setAllNotMolochTeam
+		
       message("Der Moloch ist tod, sucht seine Items! " + _moloch.position)
       message("Bitte fair sein und nur einem Spieler die Items des Moloch überlassen!")
-		
+      
       _moloch = new Player("", "", 0)
-      setAllNotMolochTeam
       return
     }
     
     //if there is a new moloch update it
     if (existingMoloch && ( newMoloch != _moloch )) {
-      message("Der neue Moloch ist " + newMoloch.playername + "!")
+      pimpTheMoloch(newMoloch)
+      
       setTeam(newMoloch, MOLOCH_TEAM)
+      
+      message("Der neue Moloch ist " + newMoloch.playername + "!")
+      
       _moloch = newMoloch
     }
+  }
+  
+  def pimpTheMoloch(newMoloch: Player) = {
+    val bufftime = 15
+    
+    setBuff(newMoloch, 3, bufftime)
+    setBuff(newMoloch, 2, bufftime)
+    setBuff(newMoloch, 5, bufftime)
+    setBuff(newMoloch, 17, bufftime)
+    setBuff(newMoloch, 62, bufftime)
+    setBuff(newMoloch, 63, bufftime)
+    setBuff(newMoloch, 58, bufftime)    
   }
   
   def updatePVP() = {
@@ -219,7 +243,7 @@ object MolochMode extends App {
     
     getTime()
     
-    //if (!oldDaytime && _daytime)
+    if (!oldDaytime && _daytime)
     {
       _isPVP = !_isPVP
       
@@ -229,9 +253,7 @@ object MolochMode extends App {
       if (_isPVP)
           is = "aktiviert"
       
-       message("PVP wurde " + is + "!")
-       message("Ich wiederhole: PVP wurde " + is + "!")
-       message("Dauer: einen Tag")
+       message("PVP wurde " + is + "! Dauer: Ein ganzer Tag")
     }
   }
   
@@ -272,15 +294,35 @@ object MolochMode extends App {
 
     val json = parseJSON(html)
 
-    val response = json.apply("response")
+    val kills = json.apply("response")
     
-    println(player.playername + ": " + response.toString)
+    player.setKills(kills)
+    println(player.playername + ": " + kills.toString + " Kills")
   }
   
   def updateKillsForAll() = {
     _playerlist.foreach((player: Player) => {
       getKills(player)
     })
+  }
+  
+  def setBuff(player: Player, buff: Int, seconds: Int) = {
+    val path = "/v2/server/rawcmd"
+    val get = "cmd=%2Fgbuff%20" + player.playername + "%20" + buff + "%20" + seconds
+
+    val ret = callRestAPI(path, get)
+
+    val body = ret.body()
+    
+    var html = body.html().replaceAll("&quot;", "\"")
+
+    //println(html)
+
+    val json = parseJSON(html)
+
+    val response = json.apply("response")
+    
+    println(player.playername + ": " + response.toString)
   }
   
   def message(msg: String) = {
@@ -299,7 +341,45 @@ object MolochMode extends App {
 
     val response = json.apply("response")
     
-    println(response.toString)
+    println(response.toString + ": " + msg)
+  }
+  
+  def printHighscore() {
+    var array = for (player <- _playerlist) yield {
+      var kills = player.kills
+      
+      val index_killed = kills.indexOf("killed")
+      val index_players = kills.indexOf("players")
+      
+      (player.playername, kills.substring(index_killed+7, index_players-1).toInt)
+    }
+    
+    def toList[a](array: Array[a]): List[a] = {
+	    def convert(arr: Array[a], aggregator: List[a]): List[a] = {
+	      if (arr == null || arr.length == 0) aggregator
+	      else convert(arr.slice(0, arr.length-1), arr(arr.length-1) :: aggregator)
+	    }
+		convert(array, Nil)
+	}
+
+    var killist: List[(String, Int)] = toList(array).sortWith((a, b) => {
+      if (a._2 < b._2)
+        true
+      else if (a._2 > b._2)
+        false
+      else
+        true
+    })
+    
+    message("Der beste Spieler ist " + killist(0)._1 + " mit " + killist(0)._2 + " Kills!")
+    
+    if (killist.size < 2)
+      return
+    
+    message("Kills der anderen Spieler:")
+    for (i <- (1 to (killist.size-1))) {
+      message(killist(i)._1 + " hat " + killist(i)._2 + " Kills!")
+    }
   }
 
   class Player(val playername: String, val loginname: String, val team: Int) {

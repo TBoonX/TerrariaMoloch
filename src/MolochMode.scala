@@ -11,6 +11,7 @@ object MolochMode extends App {
   var _daytime: Boolean = true
   var _countDays: Int = 0
   var _moloch: Player = new Player("", "", 0)
+  var _isPVP: Boolean = false
 
   //function which calls the rest api
   def callRestAPI(path: String, get: String): org.jsoup.nodes.Document = {
@@ -134,6 +135,9 @@ object MolochMode extends App {
     
     println("set initial teams")
     setTeamForAll()
+    
+    println("disable pvp for all")
+    disablePVP()
     println("")
     
     //go into loop
@@ -195,9 +199,53 @@ object MolochMode extends App {
     }
   }
   
+  def updatePVP() = {
+    val oldTime = _currentTime
+    val oldDaytime = _daytime
+    
+    getTime()
+    
+    if (!oldDaytime && _daytime) {
+      _isPVP = !_isPVP
+      
+      togglePVP()
+      
+      var is = "deaktiviert"
+      if (_isPVP)
+          is = "aktiviert"
+      
+       message("PVP wurde " + is + "!")
+       message("Ich wiederhole: PVP wurde " + is + "!")
+       message("Dauer: einen Tag")
+    }
+  }
+  
+  def togglePVP() = {
+    val path = "/v2/server/rawcmd"
+    val get = "cmd=%2Ffpvp%20%2A"
+
+    val ret = callRestAPI(path, get)
+
+    val body = ret.body()
+    
+    var html = body.html().replaceAll("&quot;", "\"")
+
+    //println(html)
+
+    val json = parseJSON(html)
+
+    val response = json.apply("response")
+    
+    println(response.toString)
+  }
+  
+  def disablePVP() = {
+    //TODO
+  }
+  
   def message(msg: String) = {
     val path = "/v2/server/broadcast"
-    val get = "msg=" + (msg.replace(" ", "%20").replace("!", "%21").replace(",", "%2C"))
+    val get = "msg=" + (msg.replace(" ", "%20").replace("!", "%21").replace(",", "%2C").replace(":", "%3A"))
 
     val ret = callRestAPI(path, get)
 

@@ -197,6 +197,7 @@ object MolochMode extends App {
     //if there is a new moloch update it
     if (existingMoloch && ( newMoloch != _moloch )) {
       message("Der neue Moloch ist " + newMoloch.playername + "!")
+	  setAllNotMolochTeam
       setTeam(newMoloch, MOLOCH_TEAM)
       _moloch = newMoloch
     }

@@ -8,6 +8,7 @@ object MolochMode extends App {
 
   var _playerlist: Array[Player] = Array()
   var _currentTime: Int = 700
+  var _daytime: Boolean = true
   var _countDays: Int = 0
   var _moloch: Player = new Player("", "", 0)
 
@@ -35,18 +36,6 @@ object MolochMode extends App {
     val json = parseJSON(html)
 
     val players = json.apply("players")
-    
-    
-    /*
-    players.length
-    players.iterator.foreach((player: ScalaJSON) => {
-      val playername = player.apply("nickname")
-      val loginname = player.apply("loginname")
-      val team = player.apply("team")
-
-      _playerlist = _playerlist ++ List(new Player(playername, loginname, team))
-      
-    })*/
 
     _playerlist = (for (i <- (0 to players.length - 1)) yield {
       val player = players.apply(i)
@@ -78,6 +67,28 @@ object MolochMode extends App {
     val buffs = json.apply("buffs")
 
     player.setRead(position, inventory, buffs)
+  }
+  
+  def getTime() = {
+    val path = "/world/read"
+    val get = ""
+
+    val ret = callRestAPI(path, get)
+
+    val body = ret.body()
+    
+    var html = body.html().replaceAll("&quot;", "\"")
+
+    println(html)
+
+    val json = parseJSON(html)
+
+    val time = json.apply("time")
+    val daytime = json.apply("daytime")
+    
+    _currentTime = time.toInt
+    _daytime = daytime.toString.equals("true") ? true : false
+    
   }
 
   def main() = {

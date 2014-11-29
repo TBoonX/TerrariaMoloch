@@ -4,6 +4,9 @@ import JSON._
 
 object MolochMode extends App {
 
+  final val NO_MOLOCH_TEAM = "green"
+  final val MOLOCH_TEAM = "red"
+
   val token = "A520A66CF7F2BCA28D337FB0AA6AB5CEB89A543106761C5F954C83918E304567"
 
   var _playerlist: Array[Player] = Array()
@@ -93,11 +96,13 @@ object MolochMode extends App {
     
   }
   
-  def setTeamForAll() = {
+  def setTeamColor(color : String) = {
     _playerlist.foreach((player: Player) => {
-      setTeam(player, "green")
+      setTeam(player, color)
     })
   }
+  
+  def setAllNotMolochTeam = setTeamColor(NO_MOLOCH_TEAM)
   
   def setTeam(player: Player, team: String) = {
     val path = "/v2/server/rawcmd"
@@ -121,6 +126,8 @@ object MolochMode extends App {
   def main() = {
     println("Welcome to Terraria - Moloch !!!")
     println("")
+	
+
     print("get player info")
 
     getPlayers
@@ -133,7 +140,7 @@ object MolochMode extends App {
     getTime
     
     println("set initial teams")
-    setTeamForAll()
+    setAllNotMolochTeam
     println("")
     
     //go into loop
@@ -143,8 +150,6 @@ object MolochMode extends App {
   def running() = {
     while (true) {
       updateMoloch()
-      
-      
     }
   }
   
@@ -166,31 +171,30 @@ object MolochMode extends App {
     //is there a moloch?
     val newMoloch: Player = getMoloch()
     var existingMoloch = true
-    if (newMoloch.playername.equals(""))
+    if (newMoloch.playername.equals("")){
     	existingMoloch = false
-    	
+    }
+	
     //if there was no moloch do nothing
-    if (!existingMoloch && ( newMoloch == _moloch ))
+	//or if the moloch is the same do nothing
+    if (newMoloch == _moloch ){
       return
-    
-    //if the moloch is the same do nothing
-    if (existingMoloch && ( newMoloch == _moloch ))
-      return
-    
+    }
+
     //if there is no moloch more print message to players
     if (!existingMoloch) {
       message("Der Moloch ist tod, sucht seine Items! " + _moloch.position)
       message("Bitte fair sein und nur einem Spieler die Items des Moloch überlassen!")
-      
+		
       _moloch = new Player("", "", 0)
-      
+      setAllNotMolochTeam
       return
     }
     
     //if there is a new moloch update it
     if (existingMoloch && ( newMoloch != _moloch )) {
       message("Der neue Moloch ist " + newMoloch.playername + "!")
-      
+      setTeam(newMoloch, MOLOCH_TEAM)
       _moloch = newMoloch
     }
   }

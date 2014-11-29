@@ -6,7 +6,7 @@ object MolochMode extends App {
 
   val token = "A520A66CF7F2BCA28D337FB0AA6AB5CEB89A543106761C5F954C83918E304567"
 
-  var _playerlist: List[Player] = List()
+  var _playerlist: Array[Player] = Array()
   var _currentTime: Int = 700
   var _countDays: Int = 0
   var _moloch: Player = new Player("", "", 0)
@@ -28,12 +28,17 @@ object MolochMode extends App {
 
     val body = ret.body()
 
-    println(body.html())
-
-    val json = parseJSON(body.html())
+    var html = body.html().replaceAll("&quot;", "\"")
+    
+    println(html)
+    
+    val json = parseJSON(html)
 
     val players = json.apply("players")
     
+    
+    /*
+    players.length
     players.iterator.foreach((player: ScalaJSON) => {
       val playername = player.apply("nickname")
       val loginname = player.apply("loginname")
@@ -41,17 +46,17 @@ object MolochMode extends App {
 
       _playerlist = _playerlist ++ List(new Player(playername, loginname, team))
       
-    })
-/*
+    })*/
+
     _playerlist = (for (i <- (0 to players.length - 1)) yield {
       val player = players.apply(i)
 
-      val playername = player.apply("nickname")
-      val loginname = player.apply("loginname")
-      val team = player.apply("team")
+      val playername = player.apply("nickname").toString
+      val loginname = player.apply("username").toString
+      val team = player.apply("team").toInt
 
       new Player(playername, loginname, team)
-    }).toArray*/
+    }).toArray//*/
   }
 
   def getDetailedPlayerInfo(player: Player) = {
@@ -61,10 +66,12 @@ object MolochMode extends App {
     val ret = callRestAPI(path, get)
 
     val body = ret.body()
+    
+    var html = body.html().replaceAll("&quot;", "\"")
 
-    println(body.html())
+    println(html)
 
-    val json = parseJSON(body.html())
+    val json = parseJSON(html)
 
     val position = json.apply("position")
     val inventory = json.apply("inventory")

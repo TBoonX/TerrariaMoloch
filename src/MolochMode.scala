@@ -7,7 +7,7 @@ object MolochMode extends App {
   val token = "A520A66CF7F2BCA28D337FB0AA6AB5CEB89A543106761C5F954C83918E304567"
 
   var _playerlist: Array[Player] = Array()
-  var _currentTime: Int = 700
+  var _currentTime: Float = 700.0f
   var _daytime: Boolean = true
   var _countDays: Int = 0
   var _moloch: Player = new Player("", "", 0)
@@ -86,21 +86,55 @@ object MolochMode extends App {
     val time = json.apply("time")
     val daytime = json.apply("daytime")
     
-    _currentTime = time.toInt
-    _daytime = daytime.toString.equals("true") ? true : false
+    _currentTime = time.toString.toFloat
+    _daytime = false
+    if (daytime.toString.equals("true"))
+    	_daytime = true
     
+  }
+  
+  def setTeamForAll() = {
+    
+  }
+  
+  def setTeam(player: Player, team: String) = {
+    val path = "/v2/server/rawcmd"
+    val get = "player=" + player.playername
+
+    val ret = callRestAPI(path, get)
+
+    val body = ret.body()
+    
+    var html = body.html().replaceAll("&quot;", "\"")
+
+    println(html)
+
+    val json = parseJSON(html)
+
+    val position = json.apply("position")
+    val inventory = json.apply("inventory")
+    val buffs = json.apply("buffs")
+
+    player.setRead(position, inventory, buffs)
   }
 
   def main() = {
     println("Welcome to Terraria - Moloch !!!")
     println("")
-    println("get player info")
+    print("get player info")
 
     getPlayers
+    println(" ...")
     _playerlist.foreach((player: Player) => {
     		getDetailedPlayerInfo(player)
     })
 
+    println("get Time")
+    getTime
+    
+    println("set initial teams")
+    setTeamForAll()
+    
     
   }
 

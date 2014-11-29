@@ -31,7 +31,7 @@ object MolochMode extends App {
 
     var html = body.html().replaceAll("&quot;", "\"")
     
-    println(html)
+    //println(html)
     
     val json = parseJSON(html)
 
@@ -58,7 +58,7 @@ object MolochMode extends App {
     
     var html = body.html().replaceAll("&quot;", "\"")
 
-    println(html)
+    //println(html)
 
     val json = parseJSON(html)
 
@@ -79,7 +79,7 @@ object MolochMode extends App {
     
     var html = body.html().replaceAll("&quot;", "\"")
 
-    println(html)
+    //println(html)
 
     val json = parseJSON(html)
 
@@ -94,12 +94,14 @@ object MolochMode extends App {
   }
   
   def setTeamForAll() = {
-    
+    _playerlist.foreach((player: Player) => {
+      setTeam(player, "green")
+    })
   }
   
   def setTeam(player: Player, team: String) = {
     val path = "/v2/server/rawcmd"
-    val get = "player=" + player.playername
+    val get = "cmd=%2Ftteam%20" + player.playername + "%20" + team
 
     val ret = callRestAPI(path, get)
 
@@ -107,15 +109,13 @@ object MolochMode extends App {
     
     var html = body.html().replaceAll("&quot;", "\"")
 
-    println(html)
+    //println(html)
 
     val json = parseJSON(html)
 
-    val position = json.apply("position")
-    val inventory = json.apply("inventory")
-    val buffs = json.apply("buffs")
-
-    player.setRead(position, inventory, buffs)
+    val response = json.apply("response")
+    
+    println(response.toString)
   }
 
   def main() = {
@@ -134,8 +134,84 @@ object MolochMode extends App {
     
     println("set initial teams")
     setTeamForAll()
+    println("")
     
+    //go into loop
+    running()
+  }
+  
+  def running() = {
+    while (true) {
+      updateMoloch()
+      
+      
+    }
+  }
+  
+  def getMoloch(): Player = {
+    //go through every Player and look if he has the specific items
+    for (player <- _playerlist) {
+      getDetailedPlayerInfo(player)
+      var isMolock = false
+      if (player.inventory.contains("Magic Mirror:1"))
+        isMolock = true
+        
+      return player
+    }
     
+    return new Player("", "", 0)
+  }
+  
+  def updateMoloch() {
+    //is there a moloch?
+    val newMoloch: Player = getMoloch()
+    var existingMoloch = true
+    if (newMoloch.playername.equals(""))
+    	existingMoloch = false
+    	
+    //if there was no moloch do nothing
+    if (!existingMoloch && ( newMoloch == _moloch ))
+      return
+    
+    //if the moloch is the same do nothing
+    if (existingMoloch && ( newMoloch == _moloch ))
+      return
+    
+    //if there is no moloch more print message to players
+    if (!existingMoloch) {
+      message("Der Moloch ist tod, sucht seine Items! " + _moloch.position)
+      message("Bitte fair sein und nur einem Spieler die Items des Moloch überlassen!")
+      
+      _moloch = new Player("", "", 0)
+      
+      return
+    }
+    
+    //if there is a new moloch update it
+    if (existingMoloch && ( newMoloch != _moloch )) {
+      message("Der neue Moloch ist " + newMoloch.playername + "!")
+      
+      _moloch = newMoloch
+    }
+  }
+  
+  def message(msg: String) = {
+    val path = "/v2/server/broadcast"
+    val get = "msg=" + (msg.replace(" ", "%20").replace("!", "%21").replace(",", "%2C"))
+
+    val ret = callRestAPI(path, get)
+
+    val body = ret.body()
+    
+    var html = body.html().replaceAll("&quot;", "\"")
+
+    //println(html)
+
+    val json = parseJSON(html)
+
+    val response = json.apply("response")
+    
+    println(response.toString)
   }
 
   class Player(val playername: String, val loginname: String, val team: Int) {

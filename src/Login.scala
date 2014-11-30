@@ -17,15 +17,8 @@ object TMoloch {
 	 */
 	def callRestAPIForJson(base : String)(get: String)(path: String) = {
 		val http = base + path + "?" + get 
-		println(base)
-		println(get)
-		println(path)
-		println(http)
-		
 		val response = Jsoup.parse(doGet(http), "UTF-8", http)
-
 		val body = response.body()
-    
 		parseJSON(body.html().replaceAll("&quot;", "\""))
 	}
 

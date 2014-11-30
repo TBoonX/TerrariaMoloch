@@ -5,7 +5,7 @@ import java.net.URL
 import org.jsoup._
 import hhjson.JSON._
 
-object TMoloch {
+case class LoginInfo(host : String, port : Int, admin : String, pw : Array[Char]){
 
 	def doGet(http : String) : java.io.InputStream = {
 		new URL(http).openStream()
@@ -22,30 +22,34 @@ object TMoloch {
 		parseJSON(body.html().replaceAll("&quot;", "\""))
 	}
 
-	case class LoginInfo(host : String, port : Int, admin : String, pw : Array[Char]){
+	def callRestAPIForJsonWithBase  = callRestAPIForJson(base) _
 
-		def callRestAPIForJsonWithBase  = callRestAPIForJson(base) _
+	def callRestAPIForJsonWithBaseAndToken(get: String)(path: String) = callRestAPIForJsonWithBase(get + s"&token=${token}")(path)
 	
-		def callRestAPIForJsonWithBaseAndToken(get: String)(path: String) = callRestAPIForJsonWithBase(get + s"&token=${token}")(path)
-		
-		def callRestAPIForJsonWithBaseAndTokenWithEmptyGet = callRestAPIForJsonWithBaseAndToken("") _
+	def callRestAPIForJsonWithBaseAndTokenWithEmptyGet = callRestAPIForJsonWithBaseAndToken("") _
+
+	lazy val base = s"http://${host}:${port}"
+	lazy val token = initToken		
 	
-		lazy val base = s"http://${host}:${port}"
-		lazy val token = initToken		
-		
-		def initToken : String = {
-			val jsonResponse = callRestAPIForJsonWithBase("")(s"/token/create/${admin}/${pw.mkString}")
-			val status : String = jsonResponse("status").toString()
-			status match {
-				case "200" => jsonResponse("token").toString()
-				case _ => {
-					val error = jsonResponse("error").toString()
-					throw new RuntimeException(s"There was an error aquiring the auth token (status : ${status}): ${error}")
-				}
-				
-		    }
-		}
+	def initToken : String = {
+		val jsonResponse = callRestAPIForJsonWithBase("")(s"/token/create/${admin}/${pw.mkString}")
+		val status : String = jsonResponse("status").toString()
+		status match {
+			case "200" => jsonResponse("token").toString()
+			case _ => {
+				val error = jsonResponse("error").toString()
+				throw new RuntimeException(s"There was an error aquiring the auth token (status : ${status}): ${error}")
+			}
+			
+	    }
 	}
+}
+
+trait AbortCriteria {
+	def isAborted(info : LoginInfo) : Boolean
+}
+
+object TMoloch {
 	
 	var info : LoginInfo = null
 	
@@ -80,4 +84,38 @@ object TMoloch {
 		}
 	}
 	
+	class NeverAbortCrit extends AbortCriteria {
+		def isAborted(info : LoginInfo) : Boolean = {
+			false
+		}
+	}
+	
+	class AbortByUserInput() extends AbortCriteria {
+		
+		var abort : Boolean = false
+		
+		def isAbort = this.synchronized { abort }
+		
+		def setAbort(a : Boolean) = this.synchronized {
+			abort = a
+		}
+
+		val t = new Thread(new Runnable {
+			def run() {
+				System.out.println("*****Press any button to abort...*****")
+				System.in.read()
+				setAbort(true)
+			}	
+		})
+		t.start()
+		
+	
+		def isAborted(info : LoginInfo) : Boolean = {
+			isAbort
+		}
+	}
+	
+	def abortcrits() : List[AbortCriteria] = {
+		List(new AbortByUserInput())
+	}
 }

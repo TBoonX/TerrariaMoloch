@@ -83,7 +83,6 @@ object MolochMode extends App {
     println("")
 	
 	TMoloch(args)
-
     print("get player info")
 
     getPlayers
@@ -106,9 +105,8 @@ object MolochMode extends App {
   }
   
   def running() = {
-    var run = true
-    
-    while (run) {
+    val abortCriterias : List[AbortCriteria] = TMoloch.abortcrits
+    while (! abortCriterias.exists(_.isAborted(info))) {
       println("update the moloch")
       updateMoloch()
       
@@ -117,11 +115,10 @@ object MolochMode extends App {
       
       println("update Kills")
       updateKillsForAll()
-      
-      printHighscore()
-      
-      run = false
+	  Thread.sleep(1000)
     }
+	
+	printHighscore()
   }
   
   def getMoloch(): Player = {
@@ -291,9 +288,9 @@ object MolochMode extends App {
       else
         true
     })
-    
-    message("Der beste Spieler ist " + killist(0)._1 + " mit " + killist(0)._2 + " Kills!")
-    
+    if(!killist.isEmpty){
+		message("Der beste Spieler ist " + killist(0)._1 + " mit " + killist(0)._2 + " Kills!")
+	}    
     if (killist.size < 2)
       return
     

@@ -60,6 +60,12 @@ object MolochMode extends App {
     
   }
   
+  def setTime(time: String) = {
+    val path = "/v2/server/rawcmd"
+    val get = "cmd=%2Ftime%20" + time
+    val json = info.callRestAPIForJsonWithBaseAndToken(get)(path)
+  }
+  
   def setTeamColor(color : String) = {
     _playerlist.foreach((player: Player) => {
       setTeam(player, color)
@@ -83,8 +89,11 @@ object MolochMode extends App {
     println("")
 	
 	TMoloch(args)
+    
+    println("set 7 o clock")
+    setTime("7:00")
+    
     print("get player info")
-
     getPlayers
     println(" ...")
     _playerlist.foreach((player: Player) => {
@@ -115,9 +124,14 @@ object MolochMode extends App {
       
       println("update Kills")
       updateKillsForAll()
-	  Thread.sleep(1000)
+	  Thread.sleep(2000)
     }
 	
+    //freeze them all
+    _playerlist.foreach((player: Player) => {
+      setBuff(player, 47, 60)
+    })
+    
 	printHighscore()
   }
   
@@ -126,7 +140,7 @@ object MolochMode extends App {
     for (player <- _playerlist) {
       getDetailedPlayerInfo(player)
       var isMolock = false
-      if (player.inventory.contains("Magic Mirror:1"))
+      if (player.inventory.contains("Large Sapphier"))
         isMolock = true
         
       return player
@@ -197,7 +211,7 @@ object MolochMode extends App {
     
     getTime()
     
-    if (!oldDaytime && _daytime)
+    if (oldDaytime != _daytime)
     {
       _isPVP = !_isPVP
       
@@ -207,7 +221,7 @@ object MolochMode extends App {
       if (_isPVP)
           is = "aktiviert"
       
-       message("PVP wurde " + is + "! Dauer: Ein ganzer Tag")
+       message("PVP wurde " + is + "! Dauer: Ein halber Tag")
     }
   }
   
@@ -222,7 +236,7 @@ object MolochMode extends App {
   }
   
   def disablePVP() = {
-    //TODO
+    //TODO: also disable manual change
   }
   
   def getKills(player: Player) = {
@@ -290,6 +304,7 @@ object MolochMode extends App {
     })
     if(!killist.isEmpty){
 		message("Der beste Spieler ist " + killist(0)._1 + " mit " + killist(0)._2 + " Kills!")
+		makeFirework(killist(0)._1)
 	}    
     if (killist.size < 2)
       return
@@ -298,6 +313,12 @@ object MolochMode extends App {
     for (i <- (1 to (killist.size-1))) {
       message(killist(i)._1 + " hat " + killist(i)._2 + " Kills!")
     }
+  }
+  
+  def makeFirework(playername: String) = {
+    val path = "/v2/server/rawcmd"
+    val get = "cmd=%2Ffirework%20" + playername
+    val json = info.callRestAPIForJsonWithBaseAndToken(get)(path)
   }
 
   class Player(val playername: String, val loginname: String, val team: Int) {

@@ -18,10 +18,13 @@ project/plugins/project/
 
 
 .cache
-        .classpath
-        .directory
-        .metadata/
-        .project
+.classpath
+.directory
+.metadata/
+.project
 
 .gradle
 build/
+
+
+build.gradle

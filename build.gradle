@@ -1,4 +1,21 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+
+    dependencies {
+        classpath 'eu.appsatori:gradle-fatjar-plugin:0.3'
+    }
+}
 apply plugin: 'scala'
+apply plugin: 'eu.appsatori.fatjar'
+apply plugin:'application'
+
+run {
+	args = ["--host=localhost", "--port=7878", "--admin=dhaeb", "--pw=6101990"]
+}
+
+mainClassName = "de.kdi.tmoloch.MolochMode"
 
 sourceSets {
     main {
@@ -19,12 +36,16 @@ repositories {
 
 
 
+def scala_lib = 'org.scala-lang:scala-library:2.11.1'
+
+
 dependencies {
-    compile 'org.scala-lang:scala-library:2.11.1'
+    compile scala_lib
 	compile 'org.jsoup:jsoup:1.8.1'
 	compile 'net.minidev:json-smart:2.1.0'
 }
 
 dependencies {
-    testCompile "org.scala-lang:scala-library:2.11.1"
+    testCompile scala_lib
+	testCompile "org.scalatest:scalatest_2.11:2.2.1"
 }

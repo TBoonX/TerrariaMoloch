@@ -1,13 +1,14 @@
+package de.kdi.tmoloch
+
 import org.jsoup._
 import java.net.URL
-import JSON._
+import hhjson.JSON._
+import TMoloch._
 
 object MolochMode extends App {
 
   final val NO_MOLOCH_TEAM = "green"
   final val MOLOCH_TEAM = "red"
-
-  val token = "A520A66CF7F2BCA28D337FB0AA6AB5CEB89A543106761C5F954C83918E304567"
 
   var _playerlist: Array[Player] = Array()
   var _currentTime: Float = 700.0f
@@ -16,28 +17,9 @@ object MolochMode extends App {
   var _moloch: Player = new Player("", "", 0)
   var _isPVP: Boolean = false
 
-  //function which calls the rest api
-  def callRestAPI(path: String, get: String): org.jsoup.nodes.Document = {
-    val http = "http://192.168.0.102:7878" + path + "?" + get + "&token=" + token
-
-    val response = Jsoup.parse(new URL(http).openStream(), "UTF-8", http)
-
-    response
-  }
-
   def getPlayers() = {
     val path = "/v2/players/list"
-    val get = ""
-
-    val ret = callRestAPI(path, get)
-
-    val body = ret.body()
-
-    var html = body.html().replaceAll("&quot;", "\"")
-    
-    //println(html)
-    
-    val json = parseJSON(html)
+    val json = info.callRestAPIForJsonWithBaseAndTokenWithEmptyGet(path)
 
     val players = json.apply("players")
 
@@ -55,16 +37,7 @@ object MolochMode extends App {
   def getDetailedPlayerInfo(player: Player) = {
     val path = "/v2/players/read"
     val get = "player=" + player.playername
-
-    val ret = callRestAPI(path, get)
-
-    val body = ret.body()
-    
-    var html = body.html().replaceAll("&quot;", "\"")
-
-    //println(html)
-
-    val json = parseJSON(html)
+    val json = info.callRestAPIForJsonWithBaseAndToken(get)(path)
 
     val position = json.apply("position")
     val inventory = json.apply("inventory")
@@ -75,17 +48,7 @@ object MolochMode extends App {
   
   def getTime() = {
     val path = "/world/read"
-    val get = ""
-
-    val ret = callRestAPI(path, get)
-
-    val body = ret.body()
-    
-    var html = body.html().replaceAll("&quot;", "\"")
-
-    //println(html)
-
-    val json = parseJSON(html)
+    val json = info.callRestAPIForJsonWithBaseAndTokenWithEmptyGet(path)
 
     val time = json.apply("time")
     val daytime = json.apply("daytime")
@@ -108,16 +71,7 @@ object MolochMode extends App {
   def setTeam(player: Player, team: String) = {
     val path = "/v2/server/rawcmd"
     val get = "cmd=%2Ftteam%20" + player.playername + "%20" + team
-
-    val ret = callRestAPI(path, get)
-
-    val body = ret.body()
-    
-    var html = body.html().replaceAll("&quot;", "\"")
-
-    //println(html)
-
-    val json = parseJSON(html)
+    val json = info.callRestAPIForJsonWithBaseAndToken(get)(path)
 
     val response = json.apply("response")
     
@@ -128,6 +82,7 @@ object MolochMode extends App {
     println("Welcome to Terraria - Moloch !!!")
     println("")
 	
+	TMoloch(args)
 
     print("get player info")
 
@@ -262,16 +217,7 @@ object MolochMode extends App {
   def togglePVP() = {
     val path = "/v2/server/rawcmd"
     val get = "cmd=%2Ffpvp%20%2A"
-
-    val ret = callRestAPI(path, get)
-
-    val body = ret.body()
-    
-    var html = body.html().replaceAll("&quot;", "\"")
-
-    //println(html)
-
-    val json = parseJSON(html)
+    val json = info.callRestAPIForJsonWithBaseAndToken(get)(path)
 
     val response = json.apply("response")
     
@@ -285,20 +231,11 @@ object MolochMode extends App {
   def getKills(player: Player) = {
     val path = "/v2/server/rawcmd"
     val get = "cmd=%2Fcheck%20kills%20" + player.loginname
-
-    val ret = callRestAPI(path, get)
-
-    val body = ret.body()
-    
-    var html = body.html().replaceAll("&quot;", "\"")
-
-    //println(html)
-
-    val json = parseJSON(html)
+    val json = info.callRestAPIForJsonWithBaseAndToken(get)(path)
 
     val kills = json.apply("response")
     
-    player.setKills(kills)
+    player.setKills(kills toString)
     println(player.playername + ": " + kills.toString + " Kills")
   }
   
@@ -311,16 +248,7 @@ object MolochMode extends App {
   def setBuff(player: Player, buff: Int, seconds: Int) = {
     val path = "/v2/server/rawcmd"
     val get = "cmd=%2Fgbuff%20" + player.playername + "%20" + buff + "%20" + seconds
-
-    val ret = callRestAPI(path, get)
-
-    val body = ret.body()
-    
-    var html = body.html().replaceAll("&quot;", "\"")
-
-    //println(html)
-
-    val json = parseJSON(html)
+    val json = info.callRestAPIForJsonWithBaseAndToken(get)(path)
 
     val response = json.apply("response")
     
@@ -330,16 +258,7 @@ object MolochMode extends App {
   def message(msg: String) = {
     val path = "/v2/server/broadcast"
     val get = "msg=" + (msg.replace(" ", "%20").replace("!", "%21").replace(",", "%2C").replace(":", "%3A"))
-
-    val ret = callRestAPI(path, get)
-
-    val body = ret.body()
-    
-    var html = body.html().replaceAll("&quot;", "\"")
-
-    //println(html)
-
-    val json = parseJSON(html)
+    val json = info.callRestAPIForJsonWithBaseAndToken(get)(path)
 
     val response = json.apply("response")
     

@@ -1,3 +1,4 @@
+package hhjson
 
 import net.minidev.json.JSONValue
 import net.minidev.json.JSONArray

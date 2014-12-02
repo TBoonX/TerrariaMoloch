@@ -44,7 +44,7 @@ object MolochMode extends App {
       val inventory = json.apply("inventory")
       val buffs = json.apply("buffs")
 
-      player.setRead(position, inventory, buffs)
+      player.setReadReturn(position, inventory, buffs)
     }
 
     def setTeamColor(color: String) = {
@@ -195,9 +195,6 @@ object MolochMode extends App {
       Player_.getDetailedPlayerInfo(player)
     })
 
-    println("get Time")
-    World_.getTime
-
     println("set initial teams")
     Player_.setAllNotMolochTeam
     println("disable pvp for all")
@@ -240,7 +237,8 @@ object MolochMode extends App {
       if (player.inventory.contains("Large Sapphier"))
         isMolock = true
 
-      return player
+      if (isMolock)
+    	  return player
     }
 
     return new Player("", "", 0)
@@ -363,7 +361,7 @@ object MolochMode extends App {
     var buffs: String = ""
     var kills: String = ""
 
-    def setRead(p: String, i: String, b: String) = {
+    def setReadReturn(p: String, i: String, b: String) = {
       this.position = p
       this.inventory = i
       this.buffs = b

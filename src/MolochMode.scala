@@ -16,7 +16,8 @@ object MolochMode extends App {
   var _countDays: Int = 0
   var _moloch: Player = new Player("", "", 0)
   var _isPVP: Boolean = false
-
+  var noMolochHintShown = false
+  
   object Player_ {
     def getPlayers() = {
       val path = "/v2/players/list"
@@ -43,6 +44,8 @@ object MolochMode extends App {
       val position = json.apply("position")
       val inventory = json.apply("inventory")
       val buffs = json.apply("buffs")
+      
+      //println(player.playername + " has " + inventory)
 
       player.setReadReturn(position, inventory, buffs)
     }
@@ -67,7 +70,10 @@ object MolochMode extends App {
 
     def getKills(player: Player) = {
       val path = "/v2/server/rawcmd"
-      val get = "cmd=%2Fcheck%20kills%20" + player.loginname
+      var name = player.loginname
+      if (name == "" || name.length() < 1)
+        name = player.playername
+      val get = "cmd=%2Fcheck%20kills%20" + name
       val json = info.callRestAPIForJsonWithBaseAndToken(get)(path)
 
       val kills = json.apply("response")
@@ -113,13 +119,15 @@ object MolochMode extends App {
     }
 
     def togglePVP() = {
-      val path = "/v2/server/rawcmd"
-      val get = "cmd=%2Ffpvp%20%2A"
-      val json = info.callRestAPIForJsonWithBaseAndToken(get)(path)
-
-      val response = json.apply("response")
-
-      println(response.toString)
+      _playerlist.foreach((player: Player) => {
+    	  val path = "/v2/server/rawcmd"
+	      val get = "cmd=%2Ffpvp%20" + player.playername
+	      val json = info.callRestAPIForJsonWithBaseAndToken(get)(path)
+	
+	      val response = json.apply("response")
+	
+	      println(response.toString)
+      })
     }
 
     def disablePVP() = {
@@ -234,7 +242,7 @@ object MolochMode extends App {
     for (player <- _playerlist) {
       Player_.getDetailedPlayerInfo(player)
       var isMolock = false
-      if (player.inventory.contains("Large Sapphier"))
+      if (player.inventory.contains("Large Sapphire:1"))
         isMolock = true
 
       if (isMolock)
@@ -259,7 +267,7 @@ object MolochMode extends App {
     }
 
     //if there is no moloch more print message to players
-    if (!existingMoloch) {
+    if (!existingMoloch && !noMolochHintShown) {
       //make them faster
       _playerlist.foreach((player: Player) => {
         Player_.setBuff(player, 3, 30)
@@ -268,9 +276,12 @@ object MolochMode extends App {
       Player_.setAllNotMolochTeam
 
       message("Der Moloch ist tod, sucht seine Items! " + _moloch.position)
-      message("Bitte fair sein und nur einem Spieler die Items des Moloch überlassen!")
+      message("Bitte fair sein und nur einem Spieler die Items des Moloch ueberlassen!")
 
       _moloch = new Player("", "", 0)
+      
+      noMolochHintShown = true
+      
       return
     }
 
@@ -285,6 +296,8 @@ object MolochMode extends App {
       message("Der neue Moloch ist " + newMoloch.playername + "!")
 
       _moloch = newMoloch
+      
+      noMolochHintShown = false
     }
   }
 
@@ -330,9 +343,9 @@ object MolochMode extends App {
 
     var killist: List[(String, Int)] = toList(array).sortWith((a, b) => {
       if (a._2 < b._2)
-        true
-      else if (a._2 > b._2)
         false
+      else if (a._2 > b._2)
+        true
       else
         true
     })

@@ -10,7 +10,7 @@ object MolochMode extends App {
   final val NO_MOLOCH_TEAM = "green"
   final val MOLOCH_TEAM = "red"
 
-  var _playerlist: Array[Player] = Array()
+  def _playerlist: List[Player] = Player_.getPlayers().map(Player_.getDetailedPlayerInfo(_))
   var _currentTime: Float = 700.0f
   var _daytime: Boolean = true
   var _countDays: Int = 0
@@ -22,10 +22,9 @@ object MolochMode extends App {
     def getPlayers() = {
       val path = "/v2/players/list"
       val json = info.callRestAPIForJsonWithBaseAndTokenWithEmptyGet(path)
-
       val players = json.apply("players")
 
-      _playerlist = (for (i <- (0 to players.length - 1)) yield {
+      (for (i <- (0 to players.length - 1)) yield {
         val player = players.apply(i)
 
         val playername = player.apply("nickname").toString
@@ -33,7 +32,7 @@ object MolochMode extends App {
         val team = player.apply("team").toInt
 
         new Player(playername, loginname, team)
-      }).toArray //*/
+      }).toList //*/
     }
 
     def getDetailedPlayerInfo(player: Player) = {
@@ -48,6 +47,7 @@ object MolochMode extends App {
       //println(player.playername + " has " + inventory)
 
       player.setReadReturn(position, inventory, buffs)
+	  player
     }
 
     def setTeamColor(color: String) = {
@@ -99,6 +99,16 @@ object MolochMode extends App {
     }
 
     def updatePVP() = {
+	  def toggle() = {
+		_isPVP = !_isPVP
+        togglePVP()
+        var is = "deaktiviert"
+        if (_isPVP)
+          is = "aktiviert"
+        message("PVP wurde " + is + "! Dauer: Ein halber Tag")
+		println(s"Aktuelle Zeit: ${_currentTime}")
+	  }
+	
       val oldTime = _currentTime
       val oldDaytime = _daytime
 
@@ -106,16 +116,14 @@ object MolochMode extends App {
 
       if (!oldDaytime && _daytime) //on a new day
       {
-        _isPVP = !_isPVP
-
-        togglePVP()
-
-        var is = "deaktiviert"
-        if (_isPVP)
-          is = "aktiviert"
-
-        message("PVP wurde " + is + "! Dauer: Ein halber Tag")
-      }
+		_countDays = _countDays + 1
+		 toggle()
+      } else if(oldDaytime && !_daytime){// night dawn
+		 if(_countDays != 0){
+			toggle()
+		 }
+	  }
+  
     }
 
     def togglePVP() = {
@@ -195,13 +203,6 @@ object MolochMode extends App {
 
     println("set 7 o clock")
     World_.setTime("7:00")
-
-    print("get player info")
-    Player_.getPlayers
-    println(" ...")
-    _playerlist.foreach((player: Player) => {
-      Player_.getDetailedPlayerInfo(player)
-    })
 
     println("set initial teams")
     Player_.setAllNotMolochTeam
@@ -324,24 +325,16 @@ object MolochMode extends App {
   }
 
   def printHighscore() {
-    var array = for (player <- _playerlist) yield {
+    var array : List[(String, Int)] = (for (player <- _playerlist) yield {
       val kills = player.kills
 
       val index_killed = kills.indexOf("killed")
       val index_players = kills.indexOf("players")
 
       (player.playername, kills.substring(index_killed + 7, index_players - 1).toInt)
-    }
+    }).toList
 
-    def toList[a](array: Array[a]): List[a] = {
-      def convert(arr: Array[a], aggregator: List[a]): List[a] = {
-        if (arr == null || arr.length == 0) aggregator
-        else convert(arr.slice(0, arr.length - 1), arr(arr.length - 1) :: aggregator)
-      }
-      convert(array, Nil)
-    }
-
-    var killist: List[(String, Int)] = toList(array).sortWith((a, b) => {
+    var killist: List[(String, Int)] = array.sortWith((a, b) => {
       if (a._2 < b._2)
         false
       else if (a._2 > b._2)
